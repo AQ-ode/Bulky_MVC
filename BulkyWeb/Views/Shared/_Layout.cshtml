@@ -1,4 +1,6 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -10,7 +12,7 @@
     <link rel="stylesheet" href="~/BulkyWeb.styles.css" asp-append-version="true" />
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" />
     <link rel="//cdn.datatables.net/2.0.7/css/dataTables.dataTables.min.css" />
-  
+
 </head>
 <body>
     <header>
@@ -28,7 +30,7 @@
                         </li>
 
                         <li class="nav-item">
-                            <a class="nav-link text-white" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link text-white" asp-area="Admin" asp-controller="Order" asp-action="Index">Manage Order</a>
                         </li>
                         @if (User.IsInRole(SD.Role_Admin))
                         {
@@ -46,12 +48,15 @@
                                     <li class="nav-item">
                                         <a class="nav-link text-white" asp-area="Admin" asp-controller="Company" asp-action="Index">Company</a>
                                     </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link text-white" asp-area="Identity" asp-page="/Account/Register">Create User</a>
+                                    </li>
                                 </ul>
                             </li>
                         }
                         <li class="nav-item">
                             <a class="nav-link text-white" asp-area="Customer" asp-controller="Cart" asp-action="Index">
-                                <i class="bi bi-cart"></i>&nbsp;
+                                @await Component.InvokeAsync("ShoppingCart")
                             </a>
                         </li>
 
