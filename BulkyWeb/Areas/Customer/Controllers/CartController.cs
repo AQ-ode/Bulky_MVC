@@ -93,6 +93,23 @@ namespace BulkyWeb.Areas.Customer.Controllers
 
             }
             _unitOfWork.OrderHeader.Add(ShoppingCartVM.OrderHeader);
+
+            if (string.IsNullOrWhiteSpace(ShoppingCartVM.OrderHeader.Name))
+            {
+                ModelState.AddModelError("OrderHeader.Name", "Customer name cannot be empty.");
+            }
+
+            if (string.IsNullOrWhiteSpace(ShoppingCartVM.OrderHeader.PhoneNumber))
+            {
+                ModelState.AddModelError("OrderHeader.PhoneNumber", "Phone number cannot be empty.");
+            }
+
+            if (ModelState.ContainsKey("OrderHeader.Name") && ModelState["OrderHeader.Name"].Errors.Count > 0 ||
+                ModelState.ContainsKey("OrderHeader.PhoneNumber") && ModelState["OrderHeader.PhoneNumber"].Errors.Count > 0)
+            {
+                return View("Summary", ShoppingCartVM);
+            }
+
             _unitOfWork.save();
             foreach (var cart in ShoppingCartVM.ShoppingCartList)
             {
