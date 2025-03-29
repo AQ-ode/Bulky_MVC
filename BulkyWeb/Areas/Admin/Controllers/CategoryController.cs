@@ -9,18 +9,27 @@ namespace BulkyWeb.Areas.Admin.Controllers
     public class CategoryController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;
-        public CategoryController(IUnitOfWork unitOfWork)
+        private readonly ILogger<CategoryController> _logger;
+        public CategoryController(IUnitOfWork unitOfWork, ILogger<CategoryController> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
         public IActionResult Index()
         {
-            List<Category> objCategoryList = _unitOfWork.Category.GetAll().ToList();
-            return View(objCategoryList);
+            try
+            {
+                List<Category> objCategoryList = _unitOfWork.Category.GetAll().ToList();
+                return View(objCategoryList);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching category list.");
+                return RedirectToAction("Error", "Home");
+            }
         }
         public IActionResult Create()
         {
-
             return View();
         }
 
@@ -28,72 +37,109 @@ namespace BulkyWeb.Areas.Admin.Controllers
         [Route("Admin/Category/Create")]
         public IActionResult Create([FromBody] Category category)
         {
-            if (category.Name == category.DisplayOrder.ToString())
+            try
             {
-
-                ModelState.AddModelError("name", "Display Order cannot exactly match the name");
-
+                if (category.Name == category.DisplayOrder.ToString())
+                {
+                    ModelState.AddModelError("name", "Display Order cannot exactly match the name");
+                }
+                if (ModelState.IsValid)
+                {
+                    _unitOfWork.Category.Add(category);
+                    _unitOfWork.save();
+                    return RedirectToAction("Index");
+                }
+                return View(category);
             }
-            if (ModelState.IsValid)
+            catch (Exception ex)
             {
-                _unitOfWork.Category.Add(category);
-                _unitOfWork.save();
-                return RedirectToAction("Index");
+                _logger.LogError(ex, "Error creating category.");
+                return RedirectToAction("Error", "Home");
             }
-            return View();
         }
         public IActionResult Edit(int? id)
         {
-            if (id == null || id == 0)
+            try
             {
-                return NotFound();
+                if (id == null || id == 0)
+                {
+                    return NotFound();
+                }
+                Category categoryFromDb = _unitOfWork.Category.Get(u => u.Id == id);
+                if (categoryFromDb == null)
+                {
+                    return NotFound();
+                }
+                return View(categoryFromDb);
             }
-            Category categoryFromDb = _unitOfWork.Category.Get(u => u.Id == id);
-            if (categoryFromDb == null)
+            catch (Exception ex)
             {
-                return NotFound();
+                _logger.LogError(ex, "Error fetching category for edit.");
+                return RedirectToAction("Error", "Home");
             }
-            return View(categoryFromDb);
         }
 
         [HttpPost]
         public IActionResult Edit(Category category)
         {
-            if (ModelState.IsValid)
+            try
             {
-                _unitOfWork.Category.update(category);
-                _unitOfWork.save();
-                return RedirectToAction("Index");
+                if (ModelState.IsValid)
+                {
+                    _unitOfWork.Category.update(category);
+                    _unitOfWork.save();
+                    return RedirectToAction("Index");
+                }
+                return View(category);
             }
-            return View();
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating category.");
+                return RedirectToAction("Error", "Home");
+            }
         }
         public IActionResult Delete(int? id)
         {
-            if (id == null || id == 0)
+            try
             {
-                return NotFound();
+                if (id == null || id == 0)
+                {
+                    return NotFound();
+                }
+                Category categoryFromDb = _unitOfWork.Category.Get(u => u.Id == id);
+                if (categoryFromDb == null)
+                {
+                    return NotFound();
+                }
+                return View(categoryFromDb);
             }
-            Category categoryFromDb = _unitOfWork.Category.Get(u => u.Id == id);
-            if (categoryFromDb == null)
+            catch (Exception ex)
             {
-                return NotFound();
+                _logger.LogError(ex, "Error fetching category for delete.");
+                return RedirectToAction("Error", "Home");
             }
-            return View(categoryFromDb);
         }
 
         [HttpPost, ActionName("Delete")]
         public IActionResult DeletePost(int? id)
         {
-            Category? obj = _unitOfWork.Category.Get(u => u.Id == id);
-            if (obj == null)
+            try
             {
-                return NotFound();
+                Category? obj = _unitOfWork.Category.Get(u => u.Id == id);
+                if (obj == null)
+                {
+                    return NotFound();
+                }
+                _unitOfWork.Category.Remove(obj);
+                _unitOfWork.save();
+                TempData["success"] = "Data Deleted Successfully";
+                return RedirectToAction("Index");
             }
-            _unitOfWork.Category.Remove(obj);
-            _unitOfWork.save();
-            TempData["success"] = "Data Deleted Succesfuly";
-            return RedirectToAction("Index");
-
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting category.");
+                return RedirectToAction("Error", "Home");
+            }
         }
     }
 }
