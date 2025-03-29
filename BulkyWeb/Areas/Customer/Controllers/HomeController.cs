@@ -3,6 +3,7 @@ using Bulky.Models;
 using Bulky.Utility;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Serilog;
 using System.Diagnostics;
 using System.Security.Claims;
 
@@ -42,24 +43,31 @@ namespace BulkyWeb.Areas.Customer.Controllers
         [Authorize]
         public IActionResult Details(ShoppingCart shoppingCart)
         {
-            var claimsIdentity = (ClaimsIdentity)User.Identity;
-            var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
-            shoppingCart.ApplicationUserId = userId;
-            ShoppingCart cartFromDb = _unitOfWork.ShoppingCart.Get(u => u.ApplicationUserId == userId && u.ProductId == shoppingCart.ProductId);
-            if (cartFromDb != null)
+            try
             {
-                cartFromDb.Count += shoppingCart.Count;
-                _unitOfWork.ShoppingCart.update(cartFromDb);
-                _unitOfWork.save();
+                var claimsIdentity = (ClaimsIdentity)User.Identity;
+                var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
+                shoppingCart.ApplicationUserId = userId;
+                ShoppingCart cartFromDb = _unitOfWork.ShoppingCart.Get(u => u.ApplicationUserId == userId && u.ProductId == shoppingCart.ProductId);
+                if (cartFromDb != null)
+                {
+                    cartFromDb.Count += shoppingCart.Count;
+                    _unitOfWork.ShoppingCart.update(cartFromDb);
+                    _unitOfWork.save();
+                }
+                else
+                {
+                    _unitOfWork.ShoppingCart.Add(shoppingCart);
+                    _unitOfWork.save();
+                    HttpContext.Session.SetInt32(SD.SessionCart,
+                        _unitOfWork.ShoppingCart.GetAll(u => u.ApplicationUserId == userId).Count());
+                }
             }
-            else
+            catch (Exception ex)
             {
-                _unitOfWork.ShoppingCart.Add(shoppingCart);
-                _unitOfWork.save();
-                HttpContext.Session.SetInt32(SD.SessionCart,
-                    _unitOfWork.ShoppingCart.GetAll(u => u.ApplicationUserId == userId).Count());
+                Log.Error(ex, "An error occurred in the Details action. UserId: {UserId}, ProductId: {ProductId}",
+           shoppingCart.ApplicationUserId, shoppingCart.ProductId);
             }
-
             return RedirectToAction(nameof(Index));
         }
         public IActionResult Privacy()
