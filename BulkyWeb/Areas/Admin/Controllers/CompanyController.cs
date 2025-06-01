@@ -49,6 +49,7 @@ namespace BulkyWeb.Areas.Admin.Controllers
                         _logger.LogWarning($"Company with ID {id} not found.");
                         return NotFound();
                     }
+                    //abc
                     return View(companyObj);
                 }
             }
