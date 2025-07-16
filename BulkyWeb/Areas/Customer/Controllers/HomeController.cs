@@ -14,16 +14,18 @@ namespace BulkyWeb.Areas.Customer.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private IUnitOfWork _unitOfWork;
+        private readonly IConfiguration _configuration;
 
-        public HomeController(ILogger<HomeController> logger, IUnitOfWork unitOfWork)
+        public HomeController(ILogger<HomeController> logger, IUnitOfWork unitOfWork, IConfiguration configuration)
         {
             _logger = logger;
             _unitOfWork = unitOfWork;
+            this._configuration = configuration;
         }
 
         public IActionResult Index()
         {
-
+            ViewData["Greeting"] = _configuration["Greeting"];
             IEnumerable<Product> productList = _unitOfWork.Product.GetAll(includeProperties: "Category");
             return View(productList);
         }
